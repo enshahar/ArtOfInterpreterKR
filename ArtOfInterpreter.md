@@ -126,7 +126,11 @@ S-식을 사용해 산술식을 표기할 때는 "캠브리지 폴란드(Cambrid
 
 간단하게 리스트와 아톰으로만 구분했다. 예를 들어 `(def (foo X Y) (COND ((= X Y) (- X Y)) (T 10)))`는 다음과 같은 구조가 된다.
 
-		 LIST(List())
+		 LIST(List(
+		         ATOM(def), LIST(List(
+ATOM(foo), ATOM(X), ATOM(Y))), LIST(List(ATOM(COND), LIST(List(LIST(List(ATOM(=)
+, ATOM(X), ATOM(Y))), LIST(List(ATOM(-), ATOM(X), ATOM(Y))))), LIST(List(ATOM(T)
+, ATOM(10)))))))
 
 문자열을 입력받아 위의 `SExpr`로 파싱하는 객체는 다음과 같다.
 
@@ -146,18 +150,21 @@ S-식을 사용해 산술식을 표기할 때는 "캠브리지 폴란드(Cambrid
             //  SExpr = ( SExprList ) | () | Atom
             //
             def SExpr: Parser[SExpr] = 
-              LParen ~> SExprList <~ RParen  ^^ { case lst => LIST(lst) } | 
-              LParen ~ RParen ^^ {  case l~r => LIST(List()) } |
+              LParen ~> SExprList <~ RParen  ^^ { case lst => lst } | 
+              LParen ~ RParen ^^ {  case l~r => LIST() } |
               Atom ^^ { case atom => ATOM(atom) }
 
             //
             //  SExprList = Atom | Atom SExprList | SExpr | SExprList
+            //  SExprList = SExpr | SExpr SExprList
             //
             def SExprList: Parser[List[SExpr]] = 
-              Atom ~ SExprList ^^ { case atom ~ el  => ATOM(atom) :: el } |
+              SExpr ^^ { case sexpr => List(sexpr) } |
               SExpr ~ SExprList ^^ { case sexpr ~ el  => sexpr :: el } |
-              Atom ^^ { case atom => List(ATOM(atom)) } |
-              SExpr ^^ { case sexpr => List(sexpr) }
+              //Atom ~ SExprList ^^ { case atom ~ el  => ATOM(atom) :: el } |
+              //SExpr ~ SExprList ^^ { case sexpr ~ el  => sexpr :: el } |
+              //Atom ^^ { case atom => List(ATOM(atom)) } |
+              //SExpr ^^ { case sexpr => List(sexpr) }
 
             def parse(text : String) = parseAll(SExpr, text) 
           }
