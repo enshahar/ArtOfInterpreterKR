@@ -130,6 +130,7 @@ S-식을 사용해 산술식을 표기할 때는 "캠브리지 폴란드(Cambrid
 
 문자열을 입력받아 위의 `SExpr`로 파싱하는 객체는 다음과 같다.
 
+          import scala.util.parsing.combinator._
           object Parser extends RegexParsers {  // Regex(정규식)을 사용해 토큰을 매치할 수 있는 파서를 확장
             // 아톰은 \s(공백), \(, \) (오른쪽과 왼쪽 괄호)가 아닌 문자들이 1개 이상 반복된 것임.
             def Atom: Parser[String] = 
