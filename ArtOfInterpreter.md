@@ -126,7 +126,11 @@ S-식을 사용해 산술식을 표기할 때는 "캠브리지 폴란드(Cambrid
 
 간단하게 리스트와 아톰으로만 구분했다. 예를 들어 `(def (foo X Y) (COND ((= X Y) (- X Y)) (T 10)))`는 다음과 같은 구조가 된다.
 
-		 LIST(List())
+		LIST(ATOM(def), LIST(ATOM(foo),ATOM(X),ATOM(Y)),
+		                LIST(ATOM(COND),
+		                       LIST(LIST(ATOM(=),ATOM(X),ATOM(Y)),
+		                            LIST(ATOM(-),ATOM(X),ATOM(Y))),
+		                       LIST(ATOM(T),ATOM(10))))
 
 문자열을 입력받아 위의 `SExpr`로 파싱하는 객체는 다음과 같다.
 
