@@ -120,21 +120,16 @@ S-식을 사용해 산술식을 표기할 때는 "캠브리지 폴란드(Cambrid
 
 먼저 s-식은 다음과 같이 정의할 수 있다.
 
-            abstract class SExpr
-            case class LIST(elements:List[SExpr]) extends SExpr
+            sealed trait SExpr
+            case class LIST(elements:List[SExpr]) extends SExpr { override def toString() = s"LIST(${elements.mkString(",")})"
             case class ATOM(value: String) extends SExpr
 
 간단하게 리스트와 아톰으로만 구분했다. 예를 들어 `(def (foo X Y) (COND ((= X Y) (- X Y)) (T 10)))`는 다음과 같은 구조가 된다.
 
-		 LIST(List(
-		         ATOM(def), LIST(List(
-ATOM(foo), ATOM(X), ATOM(Y))), LIST(List(ATOM(COND), LIST(List(LIST(List(ATOM(=)
-, ATOM(X), ATOM(Y))), LIST(List(ATOM(-), ATOM(X), ATOM(Y))))), LIST(List(ATOM(T)
-, ATOM(10)))))))
+		 LIST(List())
 
 문자열을 입력받아 위의 `SExpr`로 파싱하는 객체는 다음과 같다.
 
-          import scala.util.parsing.combinator._
           object Parser extends RegexParsers {  // Regex(정규식)을 사용해 토큰을 매치할 수 있는 파서를 확장
             // 아톰은 \s(공백), \(, \) (오른쪽과 왼쪽 괄호)가 아닌 문자들이 1개 이상 반복된 것임.
             def Atom: Parser[String] = 
@@ -150,21 +145,18 @@ ATOM(foo), ATOM(X), ATOM(Y))), LIST(List(ATOM(COND), LIST(List(LIST(List(ATOM(=)
             //  SExpr = ( SExprList ) | () | Atom
             //
             def SExpr: Parser[SExpr] = 
-              LParen ~> SExprList <~ RParen  ^^ { case lst => lst } | 
-              LParen ~ RParen ^^ {  case l~r => LIST() } |
+              LParen ~> SExprList <~ RParen  ^^ { case lst => LIST(lst) } | 
+              LParen ~ RParen ^^ {  case l~r => LIST(List()) } |
               Atom ^^ { case atom => ATOM(atom) }
 
             //
             //  SExprList = Atom | Atom SExprList | SExpr | SExprList
-            //  SExprList = SExpr | SExpr SExprList
             //
             def SExprList: Parser[List[SExpr]] = 
-              SExpr ^^ { case sexpr => List(sexpr) } |
+              Atom ~ SExprList ^^ { case atom ~ el  => ATOM(atom) :: el } |
               SExpr ~ SExprList ^^ { case sexpr ~ el  => sexpr :: el } |
-              //Atom ~ SExprList ^^ { case atom ~ el  => ATOM(atom) :: el } |
-              //SExpr ~ SExprList ^^ { case sexpr ~ el  => sexpr :: el } |
-              //Atom ^^ { case atom => List(ATOM(atom)) } |
-              //SExpr ^^ { case sexpr => List(sexpr) }
+              Atom ^^ { case atom => List(ATOM(atom)) } |
+              SExpr ^^ { case sexpr => List(sexpr) }
 
             def parse(text : String) = parseAll(SExpr, text) 
           }
@@ -179,5 +171,4 @@ ATOM(foo), ATOM(X), ATOM(Y))), LIST(List(ATOM(COND), LIST(List(LIST(List(ATOM(=)
     case class Apply(operator: SExpr, operand: List[SExpr]) extends SExpr // 연산자와 피연산자를 구분
 
 이 식을 파싱하는 것은 다음과 같다. 자세한 부분은 설명하지 않을 것이다.
-
 
